@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>图书管理</title>
+        <script src="vue.js"></script>
+        <style>
+            *{
+                margin:0;
+                padding:0;
+            }
+            #app{
+                width: 550px;
+                margin:100px auto;
+            }
+            h1{
+                text-align: center;
+                margin-bottom: 30px;
+            }
+            table{
+                width: 550px;
+                /* 为表格设置合并边框模型 */
+                margin:auto;
+                border:1px solid #AEC942;
+                border-collapse: collapse;
+            }
+            th,td{
+                border:1px solid #98bf21
+            }
+            thead th{
+                height: 50px;
+                color:#EAF2D3;
+                background-color:#A7C942;
+                /* background-color: brown; */
+            }
+            tbody td{
+                height: 50px;
+                text-align: center;  
+            }
+            input{
+                outline: none;
+                height: 30px;
+                
+            }
+            .option{
+                height: 30px;
+                line-height: 30px;
+                padding:10px 20px 10px 20px;
+                background-color:#AEC942;
+            }
+            button{
+                width: 60px;
+                height: 30px;
+            }
+            .total{
+                text-align: center;
+                height: 30px;
+                line-height: 30px;
+                background-color: #98bf21;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <h1>图书管理</h1>
+            <div class="option">
+                <label for="id">编号：</label>
+                <input type="text" id="id" v-model="id" :disabled="flag">
+                <label for="name">名称：</label>
+                <input type="text" id="name" v-model="name">
+                <button @click="handle" :disabled="submitFag">提交</button>
+            </div>
+            <div class="total">
+                <span>图书总数：</span>
+                <span>{{total}}</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>图书名称</th>
+                        <th>时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr :key="item.id" v-for="item in books">
+                        <td>{{item.id}}</td>
+                        <td>{{item.name}}</td>
+                        <td>{{item.date | format('yyyy-MM-dd hh:mm:ss')}}</td>
+                        <td>
+                            <a href="#" @click.prevent="deleteBook(item.id)">删除</a>
+                            <span>|</span>
+                            <a href="#" @click.prevent="toEdit(item.id)">修改</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <script>
+             Vue.filter('format',function(value,arg){
+                function dateFormat(date, format) {
+          if (typeof date === "string") {
+              var mts = date.match(/(\/Date\((\d+)\)\/)/);
+              if (mts && mts.length >= 3) {
+                  date = parseInt(mts[2]);
+              }
+          }
+          date = new Date(date);
+          if (!date || date.toUTCString() == "Invalid Date") {
+              return "";
+          }
+          var map = {
+              "M": date.getMonth() + 1, //月份 
+              "d": date.getDate(), //日 
+              "h": date.getHours(), //小时 
+              "m": date.getMinutes(), //分 
+              "s": date.getSeconds(), //秒 
+              "q": Math.floor((date.getMonth() + 3) / 3), //季度 
+              "S": date.getMilliseconds() //毫秒 
+          };
+          format = format.replace(/([yMdhmsqS])+/g, function(all, t) {
+              var v = map[t];
+              if (v !== undefined) {
+                  if (all.length > 1) {
+                      v = '0' + v;
+                      v = v.substr(v.length - 2);
+                  }
+                  return v;
+              } else if (t === 'y') {
+                  return (date.getFullYear() + '').substr(4 - all.length);
+              }
+              return all;
+          });
+          return format;
+      }
+      return dateFormat(value, arg);
+    })
+              var vm = new Vue({
+                el:'#app',
+                data:{
+                   books:[],
+                    id:"",
+                    name:"",
+                    flag:false,
+                    submitFag:false,
+                },
+                methods:{
+                    handle:function(){
+                        if(this.flag){
+                            this.books.some((item)=>{
+                                if(item.id==this.id){
+                                    item.name = this.name;
+                                    // 完成更新后，终止循环
+                                    return true;
+                                }
+                            })
+                        }else{
+                        var book = {};
+                        book.name = this.name;
+                        book.id = this.id;
+                        book.date = new Date();
+                        this.books.push(book);
+                        }
+                    this.flag = false;
+                    this.id="";
+                    this.name="";    
+                    },
+                    toEdit:function(id){
+                        // 根据id查询要编辑的数据
+                        console.log(id);
+                        var book = this.books.filter(function(item){
+                            return item.id==id;
+                        });
+                        // book是数组
+                        this.id = book[0].id;
+                        this.name = book[0].name;
+                        this.flag = true;
+                    },
+                    deleteBook:function(id){
+                        // 方法一
+                        // var index = this.books.findIndex(function(item){
+                        //     return item.id==id;
+                        // })
+                        // this.books.splice(index,1);
+                        // 方法二
+                        this.books = this.books.filter(function(item){
+                            return item.id!=id;
+                        })
+                    }
+                },
+                computed:{
+                    // 计算图书总数
+                    total:function(){
+                        return this.books.length;
+                    }
+                },
+                watch:{
+                    name:function(val){
+                        var flag = this.books.some(function(item){
+                            return item.name == val;
+                        })
+                        if(flag){
+                            this.submitFag = true;
+                        }else{
+                            this.submitFag = false;
+                        }
+                    }
+                },
+                mounted:function(){
+                    // 该生命周期钩子函数被触发的时候，模板已经可以使用
+                    // 一般此时用于获取后台数据，然后把数据填充到模板
+                    var data =[{
+                        id:1,
+                        name:"三国演义",
+                        date:1598097975002,
+                    },{
+                        id:2,
+                        name:"西游记",
+                        date:1598097975002,
+                    },{
+                        id:3,
+                        name:"水浒传",
+                        date:1598097975002,
+                    }];
+                    this.books = data;
+                }
+            })
+           
+        </script>
+    </body>
+</html>
